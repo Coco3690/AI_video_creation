@@ -1,149 +1,425 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI影音創作</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Gallery - 極致美學</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 原樣保留所有自定義樣式 */
+        /* Custom scrollbar for sidebar */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #1f2937; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        
+        /* Masonry layout using CSS columns */
+        .masonry-grid { column-count: 4; column-gap: 1rem; }
+        @media (max-width: 1536px) { .masonry-grid { column-count: 3; } }
+        @media (max-width: 1024px) { .masonry-grid { column-count: 2; } }
+        @media (max-width: 640px) { .masonry-grid { column-count: 1; } }
+        
+        .masonry-item { break-inside: avoid; margin-bottom: 1rem; }
+        
+        /* Video hover effects */
+        .video-container { position: relative; overflow: hidden; border-radius: 0.75rem; background: #1f2937; }
+        .video-container video { width: 100%; height: auto; display: block; transition: transform 0.3s ease; }
+        .video-container:hover video { transform: scale(1.02); }
+        
+        /* Description overlay */
+        .video-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 50%, transparent 100%); padding: 1.5rem 1rem 1rem; transform: translateY(100%); transition: transform 0.3s ease; }
+        .video-container:hover .video-overlay { transform: translateY(0); }
+        
+        /* Sidebar transition */
+        .sidebar { transition: transform 0.3s ease-in-out; }
+        .menu-btn { transition: all 0.3s ease; }
+        .menu-btn:hover { transform: scale(1.05); }
+        .sidebar-overlay { transition: opacity 0.3s ease; }
 
-<!-- 現有樣式 -->
-<link rel="stylesheet" href="fontawesome/css/all.min.css">
-<link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/bootstrap.min.css">
-<link rel="stylesheet" href="css/style.css">
-<link rel="stylesheet" href="css/style2.css">
-<link rel="stylesheet" href="css/gotop.css">
-<link rel="stylesheet" href="css/banner.css">
-<link rel="stylesheet" href="css/menu.css">
-
-<!-- Masonry Grid -->
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-<script src="dist/jquery.masonryGrid.js"></script>
-
-<style>
-.ai-banner {
-	max-width: 99%;
-	margin: 0 auto;   /* 置中 */
-	margin-bottom: 20px;
-}
-
-</style>
-
+        /* Video modal styles */
+        .video-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.95);
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .video-modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .modal-content {
+            position: relative;
+            width: 90%;
+            max-width: 1200px;
+            max-height: 90vh;
+        }
+        
+        .modal-video {
+            width: 100%;
+            height: auto;
+            max-height: 80vh;
+            border-radius: 0.5rem;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #ef4444;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            z-index: 10;
+        }
+        
+        .close-btn:hover {
+            background-color: #dc2626;
+            transform: scale(1.1);
+        }
+        
+        /* Mobile touch feedback */
+        @media (max-width: 1024px) {
+            .video-container:active video {
+                transform: scale(1.02);
+            }
+            .video-container:active .video-overlay {
+                transform: translateY(0);
+            }
+        }
+    </style>
 </head>
-
-<body>
-<div class="tm-page-wrap mx-auto">
-  <div class="container-fluid">
-    <div id="content" class="mx-auto tm-content-container">
-      <main>
-
-<!-- 頁首 Banner -->
-<header class="ai-banner">
-  <div class="ai-banner-text">
-	<h1><i id="menuIcon" class="fa fa-list" aria-hidden="true"></i> 專業的影音剪輯創作</h1>
-  </div>
-  <div class="ai-banner-links">
-	<a href="mailto:app.coder99@gmail.com">
-	  <i class="fas fa-envelope"></i> Email
-	</a>
-	&nbsp;
-	<a href="https://page.line.me/078ntzqb" target="_blank">
-	  <i class="fab fa-line"></i> 官方 Line
-	</a>
-  </div>
-</header>
-
-<!-- 浮出選單 -->
-<div class="mobile-menu" id="mobileMenu">
-  <div class="menu-content">
-  <!--
-	<div class="close-btn" id="closeMenu"><i class="fa fa-times" aria-hidden="true"></i></div>
-	<a href="service1.html">賽道1</a>
-	<a href="service2.html">賽道2</a>
-	<a href="service3.html">賽道3</a>
-	-->
-  </div>
-</div>
-
-        <!-- Masonry 影片區 -->
-        <div class="tm-catalog-item-list">
-          <!-- 這裡保留原本影片結構 -->
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-<!-- 第1個影片 -->
-
-          <div class="tm-catalog-item">
-            <div class="position-relative tm-thumbnail-container">
-              <video class="img-fluid tm-catalog-item-img video-preview" muted loop preload="auto">
-                <source src="video/KitCat貓糧電商影片.mp4" type="video/mp4">
-              </video>
-              <button class="btn btn-sm btn-primary tm-fullscreen-btn" onclick="openFullscreen(this)">
-                <i class="fas fa-expand"></i>
-              </button>
+<body class="bg-gray-950 text-gray-100 min-h-screen">
+    
+    <!-- Top Banner -->
+    <header class="fixed top-0 left-0 right-0 z-40 bg-gray-900/95 backdrop-blur-md border-b border-gray-800 h-16">
+        <div class="h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <button id="menuBtn" class="menu-btn lg:hidden flex items-center justify-center w-10 h-10 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white transition-colors" aria-label="Toggle Menu">
+                    <i class="fas fa-bars text-lg"></i>
+                </button>
+                <h1 class="hidden lg:block text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                    <i class="fas fa-play-circle mr-2 text-cyan-400"></i>My AI Creations
+                </h1>
             </div>
-            <div class="p-1 tm-bg-gray tm-catalog-item-description">
-              <h3 class="tm-text-primary tm-catalog-item-title">【給毛孩最純淨的愛！幼貓&孕貓專用糧，天然無添加，健康好食從第一口開始】</h3>
-              <p class="tm-catalog-item-text">看這隻布偶寶貝就知道！當它輕盈走來、專注品嚐的那一刻，每一口都是對「天然」的真心告白。Kit Cat幼貓&孕貓專用糧，嚴選新鮮魚肉、雞胸、豆腐與青菜等天然食材，0添加防腐劑、0人工香料，只為守護毛孩的敏感腸胃與成長需求。<br>
+            
+            <div class="flex items-center gap-4 sm:gap-6">
 
+            </div>
+        </div>
+    </header>
+
+    <div class="flex pt-16 min-h-screen">
+        <aside id="sidebar" class="sidebar fixed lg:static inset-y-0 left-0 z-30 w-64 bg-gray-900 border-r border-gray-800 transform -translate-x-full lg:translate-x-0 h-[calc(100vh-4rem)] overflow-hidden">
+            <div class="h-full flex flex-col">
+                <div class="p-4 border-b border-gray-800 lg:hidden">
+                    <h2 class="text-lg font-bold text-white"><i class="fas fa-play-circle mr-2 text-cyan-400"></i>Video Gallery</h2>
+                </div>
+                <nav class="flex-1 overflow-y-auto custom-scrollbar p-4">
+                    <div class="mb-6">
+                        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">分類目錄</h3>
+                        <ul class="space-y-1" id="categoryList">
+                            <!-- 修正分類的 data-category 屬性 -->
+                            <li><a href="?" class="category-link flex items-center gap-3 px-3 py-2 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white transition-colors" data-category="all"><i class="fas fa-home w-5"></i><span>全部影片</span></a></li>
+                            <li><a href="?ComfyUI" class="category-link flex items-center gap-3 px-3 py-2 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" data-category="ComfyUI"><i class="fas fa-fire w-5"></i><span>ComfyUI</span></a></li>
+                            <li><a href="?Seedance" class="category-link flex items-center gap-3 px-3 py-2 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white transition-colors" data-category="Seedance"><i class="fas fa-clock w-5"></i><span>Seedance</span></a></li>
+							<li><a href="?Kling" class="category-link flex items-center gap-3 px-3 py-2 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white transition-colors" data-category="Kling"><i class="fas fa-clock w-5"></i><span>Kling</span></a></li>
+							<li><a href="?Veo" class="category-link flex items-center gap-3 px-3 py-2 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white transition-colors" data-category="Veo"><i class="fas fa-clock w-5"></i><span>Veo</span></a></li>
+							<li><a href="?AfterEffect" class="category-link flex items-center gap-3 px-3 py-2 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white transition-colors" data-category="AfterEffect"><i class="fas fa-clock w-5"></i><span>After Effect</span></a></li>
+							<li><a href="?CapCut" class="category-link flex items-center gap-3 px-3 py-2 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white transition-colors" data-category="CapCut"><i class="fas fa-clock w-5"></i><span>CapCut</span></a></li>
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+        </aside>
+        
+        <div id="sidebarOverlay" class="sidebar-overlay fixed inset-0 bg-black/50 z-20 opacity-0 pointer-events-none lg:hidden"></div>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 sm:p-6 lg:p-8">
+            <div class="lg:hidden mb-6">
+                <h1 class="text-2xl font-bold text-white"><i class="fas fa-play-circle mr-2 text-cyan-400"></i>Video Gallery</h1>
+                <p class="text-gray-400 mt-1">探索精選影片內容</p>
+            </div>
+            <div class="masonry-grid" id="videoGallery">
+			
+			
+
+
+                <!-- 影片 -->
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/柔光融蠟香氛燈.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/柔光融蠟香氛燈.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">ComfyUI</span>
+							<span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Kling</span>
+							<p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+暖光慢慢化开香蜡，房间裹着温柔香气，夜晚独处幸福感拉满。<br>
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- 影片 -->
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/小米監視器產品介紹.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/小米監視器產品介紹.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">CapCut</span>
+							<p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+小米智慧監視器，內建AI 人形偵測，自動追蹤異動並手機即時提醒；紅外線夜視，支援雙向語音通話，簡易安裝，守護居家與店舖安全。<br>
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- 影片 -->
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/管道內視鏡產品短視頻.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/管道內視鏡產品短視頻.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">CapCut</span>
+							<p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+多功能管道內視鏡，輕鬆解決各類隱蔽檢測難題！機身小巧靈活，搭配高清防水探頭，可輕鬆深入管道縫隙、狹窄腔體、暗空死角，無需拆機、無需破拆，直觀看清內部堵塞、鏽蝕、裂紋、破損、積垢等細微問題。~~<br>
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- 影片 -->
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/大疆雲台產品短視頻_V1.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/大疆雲台產品短視頻_V1.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">CapCut</span>
+							<p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+一分鐘，帶你搞懂所有按鍵和操作~~<br>
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 -->
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/你才是傻狗.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/你才是傻狗.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Seedance</span>
+							<span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Kling</span>
+							<p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+課堂趣味小劇場😂Q 版李慕婉上課想換座位，沒想到旁邊柯基直接原地暴走回懟，最後只能無語扶頭徹底被打敗～<br>
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <!-- 影片 -->
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/洗腳錢我有.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/洗腳錢我有.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Seedance</span>
+							<span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Kling</span>
+							<p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+柯基大哥洗脚接催债电话，嘴硬说没钱，结果被技师猫一招 “捏脚杀” 治得服服帖帖，当场认怂：洗脚钱我有！😂# 柯基 #萌宠搞笑 #催债名场面<br>
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- 影片 -->
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/尖叫黃瓜.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/尖叫黃瓜.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Seedance</span>
+							<span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Kling</span>
+							<p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+虎斑猫只因吃了一份特色尖叫黄瓜当场惊叫，柯基一脸疑惑直呼离谱。好奇跟风也想来一份，尝完还觉得平平无奇，得知一根售价 598 元后，柯基瞬间原地破防尖叫，反差感直接拉满😂<br>
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- 影片 -->
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/機甲大戰.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/機甲大戰.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Seedance</span>
+							<span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Kling</span>
+							<p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+一段关于**人类与AI机器人争夺量子瞬移科学家和设备**的科幻小说开头片段，带有紧张的剧情和未来科技背景<br>
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- 影片 -->
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/說不說.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/說不說.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Seedance</span>
+							<span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Kling</span>
+							<p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+林正英附体功夫猫审问烧鸭，结果被柯基一句话干沉默了😂打了三天三夜，才发现自己根本没问问题！港式无厘头喜剧名场面，承包我一年的笑点！#猫咪搞笑 #无厘头喜剧 #神反转<br>
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- 影片 -->
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/你錯哪了.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/你錯哪了.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Seedance</span>
+							<span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Kling</span>
+							<p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+情侶貓吵架超真實女友貓步步引導和好男友貓瞬間懵圈表情耳朵細節超會演💕 #萌寵劇情 #貓咪日常 #反差萌<br>
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- 影片 -->
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/四个人只有三个降落伞.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/四个人只有三个降落伞.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Seedance</span>
+							<span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Kling</span>
+							<p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+飛機驚傳墜毀危機，四人卻只有三個降落傘！柯基悲壯率先跳機，貓爸滿懷父愛準備犧牲，結局神反轉超爆笑，真相直接讓貓媽傻眼崩潰😂<br>
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- 影片 -->
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/這牛肉乾吃得我腦瓜疼.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/這牛肉乾吃得我腦瓜疼.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Seedance</span>
+							<span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Kling</span>
+							<p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+一场由牛肉干引发的 “墙裂” 事故🐱<br>
+虎斑猫只是随口吐槽，橘猫却用实力证明：干饭猫的爆发力，连墙都扛不住。<br>
+牛肉干断了，橘猫懵了，墙裂了，虎斑猫笑疯了…谁能拒绝两只戏精小猫的可爱互怼呢？<br>
+#猫咪拟人 #萌宠剧场 #搞笑猫咪<br>
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- 影片1 -->
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/KitCat貓糧電商影片.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/KitCat貓糧電商影片.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">ComfyUI</span>
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Seedance</span>
+							<p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+看這隻布偶寶貝就知道！當它輕盈走來、專注品嚐的那一刻，每一口都是對「天然」的真心告白。Kit Cat幼貓&孕貓專用糧，嚴選新鮮魚肉、雞胸、豆腐與青菜等天然食材，0添加防腐劑、0人工香料，只為守護毛孩的敏感腸胃與成長需求。<br>
 ✨ 你家寶貝值得的3大理由：<br>
 ✅ 專為幼貓&孕媽設計：高營養配方，支持發育黃金期，讓小生命活力滿滿！<br>
 ✅ 看得見的真材實料：包裝上的魚、肉、蔬菜不是噱頭——每一顆糧都還原食材本味，貓咪一聞就上癮！<br>
 ✅ 健康無負擔：天然無添加，遠離過敏危機，連挑剔的布偶貓都忍不住舔嘴回饋～<br>
-
-現在下單，把「健康好食」帶回家，讓愛不將就！<br>
-👉 立即搶購幼貓&孕貓專用糧<br>
-毛孩的微笑，是我們最強大的配方！</p>
-            </div>
-          </div>
-		  
-		  
-		  <div class="tm-catalog-item">
-            <div class="position-relative tm-thumbnail-container">
-              <video class="img-fluid tm-catalog-item-img video-preview" muted loop preload="auto">
-                <source src="video/電商產品主圖總集合.mp4" type="video/mp4">
-              </video>
-              <button class="btn btn-sm btn-primary tm-fullscreen-btn" onclick="openFullscreen(this)">
-                <i class="fas fa-expand"></i>
-              </button>
-            </div>
-            <div class="p-1 tm-bg-gray tm-catalog-item-description">
-              <h3 class="tm-text-primary tm-catalog-item-title">【電商產品主圖總集合】</h3>
-              <p class="tm-catalog-item-text">依托產品實物拍攝的高清原圖，借力前沿 AI 生成技術，對產品的展示角度進行智能優化調整，同時為其匹配契合電商場景的精美背景，最終打造出兼具視覺吸引力與商業實用性的優質圖片，完美適配電商平台主頁的展示需求，助力提升產品點擊率與轉化率。</p>
-            </div>
-          </div>
-		  
-		  
-		  
-		  
-		  
-<!-- 第2個影片 -->
-		  
-          <div class="tm-catalog-item">
-            <div class="position-relative tm-thumbnail-container">
-              <video class="img-fluid tm-catalog-item-img video-preview" muted loop preload="auto">
-                <source src="video/口紅電商短片.mp4" type="video/mp4">
-              </video>
-              <button class="btn btn-sm btn-primary tm-fullscreen-btn" onclick="openFullscreen(this)">
-                <i class="fas fa-expand"></i>
-              </button>
-            </div>
-            <div class="p-1 tm-bg-gray tm-catalog-item-description">
-              <h3 class="tm-text-primary tm-catalog-item-title">【16小時持色不脫妝--新上市！這支口紅讓你從早美到晚，連喝水都「鎖」住魅力！】</h3>
-              <p class="tm-catalog-item-text">還在為口紅半天就脫妝煩惱嗎？
+							</p>
+                        </div>
+                    </div>
+                </div>
+				
+				
+				
+                <!-- 影片2 -->
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/電商產品主圖總集合.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/電商產品主圖總集合.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">ComfyUI</span>
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Seedance</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          依托產品實物拍攝的高清原圖，借力前沿 AI 生成技術，對產品的展示角度進行智能優化調整，
+		  同時為其匹配契合電商場景的精美背景，最終打造出兼具視覺吸引力與商業實用性的優質圖片，
+		  完美適配電商平台主頁的展示需求，助力提升產品點擊率與轉化率。
+							</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- 影片3 -->
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/口紅電商短片.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/口紅電商短片.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">ComfyUI</span>
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Seedance</span>
+							<span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Veo</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+還在為口紅半天就脫妝煩惱嗎？
 時尚新色系口紅，以「16小時持色鎖妝」黑科技登場！<br>
 ✨ 一擦上唇，時間為你停駐：<br>
 ✅ 16小時持色不暈染：吃飯、喝咖啡、親吻都牢牢鎖色，告別補妝焦慮<br>
@@ -153,112 +429,776 @@
 看她們怎麼說？<br>
 ▫️「早上塗完開會，下班後顏色還像剛畫好！」——職場OL<br>
 ▫️「連喝三杯奶茶，杯緣都沒殘留，這波我站！」——美妝博主<br>
-▫️「絲絨質地超顯白，黃皮星人終於找到本命色！」——學生黨</p>
+▫️「絲絨質地超顯白，黃皮星人終於找到本命色！」——學生黨
+							</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- 影片4 -->
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/換衣宣傳.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/換衣宣傳.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">ComfyUI</span>
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Seedance</span>
+							<span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Veo</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          影片以AI合成「雜誌封面」為背景，結合實拍模特與AI動態轉場，打造高級時尚感。
+		  AI自動優化服裝質感、光線與髮絲流動，讓黃色吊帶、米色睡衣組、
+		  紅色聯名衛衣等單品在「虛實交錯」中展現穿搭魅力。畫面穿插「手機拍攝介面」
+		  與「商品實物掛拍」，強化真實感與購買衝動。，提升轉化率。整體節奏快、畫面流暢，
+		  融合AI美學與電商技巧，讓每件單品都像走秀般吸睛。
+							</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- 影片5 -->
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/運動鞋電商.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/運動鞋電商.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Seedance</span>
+							<span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Veo</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          結合AI動態合成與產品細節強化，展現女孩晨跑活力。
+		  開場柔光微笑引發共鳴，跑步鏡頭流暢自然，鞋款特寫突顯減震、透氣科技。
+		  AI優化背景與文字浮現「官方正品499」，沙地藍天襯托自由感。
+		  影片不只是賣鞋，更是鼓勵你邁向更大世界——用科技與情感打動人心，提升轉化力。
+		  適合抖音、小紅書等平台投放。
+							</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- 影片6 -->
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/機器人電商宣傳.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/機器人電商宣傳.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">ComfyUI</span>
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Seedance</span>
+							<span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Veo</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          影片融合AI生成動態場景與實物拍攝，開場以粉紅漸層+柔光營造溫馨氛圍，
+		  AI動態追蹤機器人行走路徑，強化「智能互動」與「撒嬌陪伴」的親切感。
+		  中段切換「實物實拍」畫面，AI精準強化機械細節與LED表情變化，讓「有問必答」功能可視化。
+		  價格與保固資訊以動態浮現，搭配「先搶先得」促銷語，提升轉化。
+		  整體用AI提升畫質與節奏，讓科技感與親和力完美平衡，吸引年輕族群與家庭用戶。
+							</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- 影片7 -->
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/工地喵打架.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/工地喵打架.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">ComfyUI</span>
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Seedance</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          影片以AI合成技術打造「擬人化貓咪工地」，讓貓咪穿工裝、戴安全帽、推手推車，
+		  動作自然流暢。AI自動補光、調色與背景合成，營造真實工地氛圍。
+		  劇情以「貓咪被開除」為靈感出發點，搭配字幕對白，製造反差喜感。
+		  AI動態追蹤貓咪表情與肢體，強化戲劇張力。結尾「我們也不是好惹的」轉折，
+		  提升共鳴與分享意願。整體節奏快、畫面萌趣，適合社交平台傳播，兼具娛樂與品牌記憶點。
+							</p>
+                        </div>
+                    </div>
+                </div>
+				
+
+
+
+
+
+
+
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/DAILY.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/DAILY.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【DAILY】日常生活碎片
+							</p>
+                        </div>
+                    </div>
+                </div>
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/貓meme_白登&哈哈&懂王的愛恨情仇.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/貓meme_白登&哈哈&懂王的愛恨情仇.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【貓meme_白登&哈哈&懂王的愛恨情仇】貓咪meme影片，幽默呈現白登、哈哈與懂王之間的趣味互動。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/電影感片頭_對酒當歌_破碎.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/電影感片頭_對酒當歌_破碎.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【電影感片頭_對酒當歌_破碎】具有電影感的片頭設計，融合對酒當歌主題與破碎視覺效果。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/電影開場_為夢想再出發.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/電影開場_為夢想再出發.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【電影開場_為夢想再出發】勵志主題的電影開場影片，激發觀眾為夢想再次出發的勇氣。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/電影開場片頭_NEW CINEMATIC_衝擊波.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/電影開場片頭_NEW CINEMATIC_衝擊波.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【電影開場片頭_NEW CINEMATIC_衝擊波】NEW CINEMATIC風格的電影開場片頭，搭配衝擊波特效，氣勢磅礴。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/saber插件_賽博朋克_學生證.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/saber插件_賽博朋克_學生證.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【saber 插件_賽博朋克_學生證】使用saber插件創建的賽博朋克風格學生證效果影片，展現未來科技感。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/下雨+詩詞.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/下雨+詩詞.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【下雨 + 詩詞】結合下雨場景與優美詩詞的意境影片，營造出浪漫與感性的氛圍。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/人物摳圖+背景牆.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/人物摳圖+背景牆.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【人物摳圖 + 背景牆】精準的人物摳圖技術結合多樣化背景牆，創造出無縫融合的視覺效果。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/光線_追隨愛心運動路徑.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/光線_追隨愛心運動路徑.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【光線_追隨愛心運動路徑】動態光線特效跟隨愛心形狀的運動路徑，創造浪漫迷人的視覺體驗。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/剪映_下雨+眨眼.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/剪映_下雨+眨眼.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">CapCut</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【剪映_下雨 + 眨眼】使用剪映製作的創意影片，結合下雨特效與眨眼動畫，增添趣味性。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/剪映_下雪+初次音頻剪接.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/剪映_下雪+初次音頻剪接.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">CapCut</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【剪映_下雪 + 初次音頻剪接】剪映製作的冬日氛圍影片，包含下雪特效與初次音頻剪接技巧展示。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/動態粒子背景.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/動態粒子背景.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【動態粒子背景】流動的粒子背景特效，創造出科技感與動態感的視覺盛宴。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/夏日衝浪曲.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/夏日衝浪曲.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【夏日衝浪曲】充滿夏日活力的衝浪主題影片，展現陽光、海浪與運動的完美結合。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/夜月之傷_音頻可視化.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/夜月之傷_音頻可視化.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【夜月之傷_音頻可視化】結合夜月主題與音頻可視化技術，創造出音樂與視覺的完美融合。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/女特工+卡點.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/女特工+卡點.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【女特工 + 卡點】女特工主題影片配合精準的音樂卡點剪輯，展現動作與節奏的完美同步。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+
+
+
+
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/宜嶺科技-企業宣傳片001.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/宜嶺科技-企業宣傳片001.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【宜嶺科技 - 企業宣傳片 001】專業企業宣傳片，展示宜嶺科技的產品特色與企業形象。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+
+
+
+
+
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/山村姑娘_圖片+唱歌.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/山村姑娘_圖片+唱歌.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+							<span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Seedance</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【山村姑娘_圖片 + 唱歌】山村姑娘主題影片，結合圖片展示與歌唱表演，呈現純樸鄉村風情。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/數字人+介紹衣服.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/數字人+介紹衣服.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+							<span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Seedance</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【數字人 + 介紹衣服】使用數字人技術介紹服裝產品，創新展示方式提升產品吸引力。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/數字人+紙張數據效果.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/數字人+紙張數據效果.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+							<span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Seedance</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【數字人 + 紙張數據效果】數字人結合紙張數據特效，創造出獨特的視覺呈現方式。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/文字特效001-故障顯現字.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/文字特效001-故障顯現字.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【文字特效 001 - 故障顯現字】故障風格的文字顯現特效，創造出數位科技感的視覺衝擊。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/旅行.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/旅行.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【旅行】旅行主題影片，記錄旅途中的美景與感動時刻。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/日夜交替_UI風動畫.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/日夜交替_UI風動畫.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【日夜交替_UI 風動畫】UI風格的日夜交替動畫，展現時間流轉的美感與設計感。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/春運vlog-追蹤+動態圖標.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/春運vlog-追蹤+動態圖標.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【春運 vlog - 追蹤 + 動態圖標】春運主題vlog，結合追蹤攝影與動態圖標，記錄春節返鄉的點滴。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/KitCat貓糧電商影片.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/曲奇餅乾+數字人.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+							<span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">Seedance</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【曲奇餅乾 + 數字人】曲奇餅乾產品展示結合數字人介紹，創新食品推廣方式。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/水波紋+懸浮文字穿梭.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/水波紋+懸浮文字穿梭.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【水波紋 + 懸浮文字穿梭】水波紋特效與懸浮文字穿梭動畫，創造出流動感的視覺體驗。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/湍流置換_奶茶動畫.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/湍流置換_奶茶動畫.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【湍流置換_奶茶動畫】湍流置換特效應用於奶茶動畫，創造出獨特的液體流動視覺效果。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/照片下落+運鏡.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/照片下落+運鏡.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【照片下落 + 運鏡】照片下落動畫配合流暢的運鏡技巧，展現回憶與時光的流轉。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/簡易關鍵幀動畫_車子超車.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/簡易關鍵幀動畫_車子超車.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">CapCut</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【簡易關鍵幀動畫_車子超車】使用關鍵幀動畫技術製作的車子超車場景，展現動態效果與節奏感。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/紀錄美好生活_花卉.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/紀錄美好生活_花卉.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【紀錄美好生活_花卉】花卉主題的生活紀錄影片，捕捉自然之美與生活情趣。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 影片 ------------------------------>
+                <div class="masonry-item">
+                    <div class="video-container group cursor-pointer">
+                        <video poster="video/自拍集錦動畫.jpg" muted loop playsinline preload="none" loading="lazy">
+                            <source src="video/自拍集錦動畫.mp4" type="video/mp4">
+                        </video>
+                        <div class="video-overlay">
+                            <span class="video-tag inline-block px-2 py-1 bg-black/50 text-yellow-400 text-xs rounded mb-2">AfterEffect</span>
+                            <p class="text-sm text-gray-200 leading-relaxed line-clamp-3">
+          【自拍集錦動畫】自拍照片集錦動畫，展現個人風格與生活點滴。
+							</p>
+                        </div>
+                    </div>
+                </div>
+
+
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
             </div>
-          </div>
-		  
-		  
-		  
-		  
-
-          <div class="tm-catalog-item">
-            <div class="position-relative tm-thumbnail-container">
-              <video class="img-fluid tm-catalog-item-img video-preview" muted loop preload="auto">
-                <source src="video/換衣宣傳.mp4" type="video/mp4">
-              </video>
-              <button class="btn btn-sm btn-primary tm-fullscreen-btn" onclick="openFullscreen(this)">
-                <i class="fas fa-expand"></i>
-              </button>
-            </div>
-            <div class="p-1 tm-bg-gray tm-catalog-item-description">
-              <h3 class="tm-text-primary tm-catalog-item-title">【AI生成時尚廣告影片】</h3>
-              <p class="tm-catalog-item-text">影片以AI合成「雜誌封面」為背景，結合實拍模特與AI動態轉場，打造高級時尚感。AI自動優化服裝質感、光線與髮絲流動，讓黃色吊帶、米色睡衣組、紅色聯名衛衣等單品在「虛實交錯」中展現穿搭魅力。畫面穿插「手機拍攝介面」與「商品實物掛拍」，強化真實感與購買衝動。，提升轉化率。整體節奏快、畫面流暢，融合AI美學與電商技巧，讓每件單品都像走秀般吸睛。</p>
-            </div>
-          </div>
-		  
-		  
-		  
-		  
-
-          <div class="tm-catalog-item">
-            <div class="position-relative tm-thumbnail-container">
-              <video class="img-fluid tm-catalog-item-img video-preview" muted loop preload="auto">
-                <source src="video/運動鞋電商.mp4" type="video/mp4">
-              </video>
-              <button class="btn btn-sm btn-primary tm-fullscreen-btn" onclick="openFullscreen(this)">
-                <i class="fas fa-expand"></i>
-              </button>
-            </div>
-            <div class="p-1 tm-bg-gray tm-catalog-item-description">
-              <h3 class="tm-text-primary tm-catalog-item-title">【AI生成運動鞋廣告】</h3>
-              <p class="tm-catalog-item-text">結合AI動態合成與產品細節強化，展現女孩晨跑活力。開場柔光微笑引發共鳴，跑步鏡頭流暢自然，鞋款特寫突顯減震、透氣科技。AI優化背景與文字浮現「官方正品499」，沙地藍天襯托自由感。影片不只是賣鞋，更是鼓勵你邁向更大世界——用科技與情感打動人心，提升轉化力。適合抖音、小紅書等平台投放。</p>
-            </div>
-          </div>
-		  
-		  
-		  
-		  
-
-          <div class="tm-catalog-item">
-            <div class="position-relative tm-thumbnail-container">
-              <video class="img-fluid tm-catalog-item-img video-preview" muted loop preload="auto">
-                <source src="video/機器人電商宣傳.mp4" type="video/mp4">
-              </video>
-              <button class="btn btn-sm btn-primary tm-fullscreen-btn" onclick="openFullscreen(this)">
-                <i class="fas fa-expand"></i>
-              </button>
-            </div>
-            <div class="p-1 tm-bg-gray tm-catalog-item-description">
-              <h3 class="tm-text-primary tm-catalog-item-title">【AI打造AI陪伴機器人廣告】</h3>
-              <p class="tm-catalog-item-text">影片融合AI生成動態場景與實物拍攝，開場以粉紅漸層+柔光營造溫馨氛圍，AI動態追蹤機器人行走路徑，強化「智能互動」與「撒嬌陪伴」的親切感。中段切換「實物實拍」畫面，AI精準強化機械細節與LED表情變化，讓「有問必答」功能可視化。價格與保固資訊以動態浮現，搭配「先搶先得」促銷語，提升轉化。整體用AI提升畫質與節奏，讓科技感與親和力完美平衡，吸引年輕族群與家庭用戶。</p>
-            </div>
-          </div>
-		  
-		  
-		  
-		  
-		  
-		  
-                        <!-- 第1個影片 -->
-
-						
-
-		  
-		  
-		  
-
-
-
-        </div><!-- /.tm-catalog-item-list -->
-
-      </main>
+        </main>
     </div>
-  </div>
-</div>
 
-<!-- Scripts -->
-<script src="js/bootstrap.min.js"></script>
-<script src="js/main.js"></script>
-<!--<script src="js/menu.js"></script>-->
+    <!-- Video Modal -->
+    <div id="videoModal" class="video-modal">
+        <div class="modal-content">
+            <button id="closeModalBtn" class="close-btn">
+                <i class="fas fa-times"></i>
+            </button>
+            <video id="modalVideo" class="modal-video" controls playsinline></video>
+        </div>
+    </div>
 
-<script>
-// Masonry Grid 啟用
-$(document).ready(function() {
-  $('.tm-catalog-item-list').masonryGrid({
-    columns: 3,
-    gutter: 15,
-    breakpoints: {
-      1200: 3,
-      992: 2,
-      576: 1
+    <!-- Footer -->
+    <footer class="bg-gray-900 border-t border-gray-800 py-6 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <p class="text-center text-sm text-gray-500">&copy; 2026 Video Gallery. All rights reserved. | <span class="text-gray-400">極致美學設計</span></p>
+        </div>
+    </footer>
+
+    <script>
+        // 側邊欄邏輯
+        const menuBtn = document.getElementById('menuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        let isSidebarOpen = false;
+
+        function toggleSidebar() {
+            isSidebarOpen = !isSidebarOpen;
+            if (isSidebarOpen) {
+                sidebar.classList.remove('-translate-x-full');
+                sidebarOverlay.classList.remove('opacity-0', 'pointer-events-none');
+                document.body.style.overflow = 'hidden';
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                sidebarOverlay.classList.add('opacity-0', 'pointer-events-none');
+                document.body.style.overflow = '';
+            }
+        }
+
+        menuBtn.addEventListener('click', toggleSidebar);
+        sidebarOverlay.addEventListener('click', toggleSidebar);
+        document.querySelectorAll('#sidebar a').forEach(link => {
+            link.addEventListener('click', () => { if (window.innerWidth < 1024) toggleSidebar(); });
+        });
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth >= 1024 && isSidebarOpen) {
+                sidebar.classList.remove('-translate-x-full');
+                sidebarOverlay.classList.add('opacity-0', 'pointer-events-none');
+                document.body.style.overflow = '';
+                isSidebarOpen = false;
+            }
+        });
+
+        // 滑鼠播放 / 離開暫停
+        document.addEventListener('DOMContentLoaded', () => {
+            // ========== 分類過濾核心邏輯 ==========
+            const categoryLinks = document.querySelectorAll('.category-link');
+            const videoItems = document.querySelectorAll('.masonry-item');
+            const activeClass = 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20';
+            const inactiveClass = 'text-gray-400 hover:bg-gray-800 hover:text-white transition-colors';
+
+
+            // 分類過濾函數
+            function filterVideos(targetCategory) {
+			    console.log("最終分類：", initialCategory);
+                // 更新分類按鈕樣式
+                categoryLinks.forEach(link => {
+                    link.className = `category-link flex items-center gap-3 px-3 py-2 rounded-lg ${link.getAttribute('data-category') === targetCategory ? activeClass : inactiveClass}`;
+                });
+
+                // 過濾影片
+                videoItems.forEach(item => {
+                    const videoTags = item.querySelectorAll('.video-tag');
+                    let hasCategory = false;
+
+                    // 遍歷影片的所有標籤，檢查是否包含目標分類
+                    videoTags.forEach(tag => {
+                        if (tag.textContent.trim() === targetCategory) {
+                            hasCategory = true;
+                        }
+                    });
+
+                    // 顯示/隱藏影片：all 顯示全部，否則只顯示匹配的
+                    if (targetCategory === 'all' || hasCategory) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            }
+
+            // 初始化分類點擊事件
+/*
+            categoryLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault(); // 阻止預設跳轉
+                    const targetCategory = link.getAttribute('data-category');
+                    filterVideos(targetCategory);
+                });
+            });
+*/
+
+// ==========  ==========
+const fullPath = window.location.href;
+let initialCategory = "all"; // 这里改成 all，不要写死 Kling
+
+// 偵測 ?
+const queryIndex = fullPath.indexOf('?');
+if (queryIndex !== -1) {
+    const categoryFromURL = fullPath.slice(queryIndex + 1).trim();
+    if (categoryFromURL) {
+        initialCategory = categoryFromURL;
     }
-  });
+}
+
+filterVideos(initialCategory);
+
+            // 預設顯示 ComfyUI 分類
+            //filterVideos('AfterEffect');
+			//filterVideos('Kling');
 
 
-});
+            // ========== 影片交互邏輯 ==========
+            document.querySelectorAll('.video-container').forEach(container => {
+                const video = container.querySelector('video');
+                const source = video.querySelector('source');
+                const videoSrc = source ? source.src : '';
+                
+                // 頁面載入後強制顯示第一幀
+                video.currentTime = 0;
 
-</script>
+                // 滑鼠滑過播放
+                container.addEventListener('mouseenter', () => { 
+                    video.play().catch(e => {}); 
+                });
+                container.addEventListener('mouseleave', () => { 
+                    video.pause(); 
+                });
 
+                // 點擊彈出視窗播放 (自動抓取source的src)
+                container.addEventListener('click', () => {
+                    const modal = document.getElementById('videoModal');
+                    const modalVideo = document.getElementById('modalVideo');
+                    
+                    // 設置彈出視窗影片源
+                    modalVideo.src = videoSrc;
+                    
+                    // 顯示彈出視窗並播放影片
+                    modal.classList.add('active');
+                    modalVideo.play();
+                    
+                    // 鎖定背景滾動
+                    document.body.style.overflow = 'hidden';
+                });
+            });
 
+            // 關閉彈出視窗
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const videoModal = document.getElementById('videoModal');
+            const modalVideo = document.getElementById('modalVideo');
+
+            // 點擊關閉按鈕
+            closeModalBtn.addEventListener('click', () => {
+                videoModal.classList.remove('active');
+                modalVideo.pause();
+                modalVideo.src = ''; // 清空影片源釋放資源
+                document.body.style.overflow = ''; // 解鎖背景滾動
+            });
+
+            // 點擊彈出視窗背景關閉
+            videoModal.addEventListener('click', (e) => {
+                if (e.target === videoModal) {
+                    closeModalBtn.click();
+                }
+            });
+
+            // ESC 鍵關閉彈出視窗
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && videoModal.classList.contains('active')) {
+                    closeModalBtn.click();
+                }
+            });
+        });
+    </script>
 </body>
 </html>
